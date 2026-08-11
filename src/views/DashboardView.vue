@@ -20,7 +20,7 @@ import {
 import { useAuth } from '../composables/useAuth'
 
 // ── Admin Auth ─────────────────────────────────────────────────────────────────
-const { isAdmin, adminUser, adminMode, logout } = useAuth()
+const { adminUser, adminMode, logout } = useAuth()
 
 const props = defineProps<{
   products: Product[]

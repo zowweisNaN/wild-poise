@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Menu, X, ShoppingBag, User, Layers, ShieldCheck, LogOut, Lock, LayoutDashboard } from '@lucide/vue'
+import { Menu, X, ShoppingBag, User, Layers, ShieldCheck, LogOut, Lock } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
 
 const props = defineProps<{
