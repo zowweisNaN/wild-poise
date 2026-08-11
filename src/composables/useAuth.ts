@@ -21,11 +21,12 @@ const authError = ref<string | null>(null)
 
 // Watch Firebase Auth state if configured
 if (auth && isFirebaseConfigured) {
-  onAuthStateChanged(auth, async (user) => {
+  const _auth = auth
+  onAuthStateChanged(_auth, async (user) => {
     if (user) {
       const email = user.email ?? ''
       if (!ALLOWED_EMAILS.includes(email.toLowerCase())) {
-        await signOut(auth)
+        await signOut(_auth)
         isAdmin.value = false
         adminUser.value = null
       } else {
