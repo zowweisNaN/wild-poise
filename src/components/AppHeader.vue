@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Menu, X, ShoppingBag, User, Layers, LayoutDashboard, ShieldCheck, LogOut, Lock } from '@lucide/vue'
-import FirebaseStatusBadge from './FirebaseStatusBadge.vue'
-import AdminLoginModal from './AdminLoginModal.vue'
+import { Menu, X, ShoppingBag, User, Layers, ShieldCheck, LogOut, Lock, LayoutDashboard } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
 
 const props = defineProps<{
@@ -19,16 +17,12 @@ const emit = defineEmits<{
 }>()
 
 const mobileOpen = ref(false)
-const showLoginModal = ref(false)
 
 const { isAdmin, adminUser, adminMode, logout } = useAuth()
 </script>
 
 <template>
   <header class="sticky top-0 z-40 bg-soft-cream/95 backdrop-blur-md border-b border-slate-grey/20 shadow-xs">
-    <!-- Admin Login Modal -->
-    <AdminLoginModal v-if="showLoginModal" @close="showLoginModal = false" @authenticated="showLoginModal = false" />
-
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="flex h-16 items-center justify-between gap-4">
         <!-- Brand Logo -->
@@ -59,29 +53,10 @@ const { isAdmin, adminUser, adminMode, logout } = useAuth()
             <Layers class="h-3.5 w-3.5" />
             Collections Catalog
           </button>
-
-          <button
-            @click="emit('navigate', 'dashboard')"
-            class="py-2 border-b-2 transition-all flex items-center gap-1.5 hover:text-slate-deep"
-            :class="activePage === 'dashboard' ? 'border-slate-deep text-slate-deep font-extrabold' : 'border-transparent text-slate-deep/70'"
-          >
-            <LayoutDashboard class="h-3.5 w-3.5 text-amber-600" />
-            <span>Dashboard</span>
-            <span class="bg-amber-500/20 text-amber-900 text-[10px] px-1.5 py-0.5 rounded-full font-bold lowercase">crud</span>
-          </button>
         </nav>
 
         <!-- Right Side Controls -->
         <div class="flex items-center gap-2">
-          <!-- Firebase Status Badge -->
-          <FirebaseStatusBadge
-            :is-live-firebase="isLiveFirebase"
-            :is-firebase-configured="isFirebaseConfigured"
-            :is-seeding="isSeeding"
-            :seed-success="seedSuccess"
-            @seed="emit('seed')"
-          />
-
           <!-- Admin Status Chip (Desktop) -->
           <div class="hidden sm:flex items-center">
             <button
@@ -100,7 +75,7 @@ const { isAdmin, adminUser, adminMode, logout } = useAuth()
 
             <button
               v-else
-              @click="showLoginModal = true"
+              @click="emit('navigate', 'dashboard')"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-all"
               title="Sign in as admin"
             >
@@ -153,13 +128,6 @@ const { isAdmin, adminUser, adminMode, logout } = useAuth()
           >
             Collections Catalog
           </button>
-          <button
-            @click="emit('navigate', 'dashboard'); mobileOpen = false"
-            class="w-full text-left px-3 py-2 text-xs font-bold uppercase text-amber-700 hover:bg-warm-sand/30 rounded-lg flex items-center gap-2"
-          >
-            <LayoutDashboard class="h-4 w-4" />
-            CRUD Dashboard
-          </button>
 
           <!-- Admin action in mobile -->
           <div class="border-t border-slate-grey/20 pt-2 mt-2">
@@ -173,7 +141,7 @@ const { isAdmin, adminUser, adminMode, logout } = useAuth()
             </button>
             <button
               v-else
-              @click="showLoginModal = true; mobileOpen = false"
+              @click="emit('navigate', 'dashboard'); mobileOpen = false"
               class="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-warm-sand/30 rounded-lg transition-colors"
             >
               <Lock class="h-4 w-4" />

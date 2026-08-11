@@ -15,16 +15,12 @@ import {
   Layers,
   AlertTriangle,
   RefreshCw,
-  ShieldCheck,
-  ShieldOff,
-  Lock
+  ShieldCheck
 } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
-import AdminLoginModal from '../components/AdminLoginModal.vue'
 
 // ── Admin Auth ─────────────────────────────────────────────────────────────────
 const { isAdmin, adminUser, adminMode, logout } = useAuth()
-const showLoginModal = ref(false)
 
 const props = defineProps<{
   products: Product[]
@@ -234,35 +230,7 @@ function handleDelete() {
 <template>
   <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
 
-    <!-- ── Admin Login Modal ─────────────────────────────────────────────────── -->
-    <AdminLoginModal v-if="showLoginModal" @close="showLoginModal = false" @authenticated="showLoginModal = false" />
-
-    <!-- ── LOCKED SCREEN: shown when not admin ───────────────────────────────── -->
-    <div v-if="!isAdmin" class="min-h-[70vh] flex items-center justify-center">
-      <div class="text-center space-y-5 max-w-sm mx-auto">
-        <div class="flex justify-center">
-          <div class="h-20 w-20 rounded-3xl bg-slate-deep/5 border border-slate-grey/20 flex items-center justify-center">
-            <ShieldOff class="h-10 w-10 text-slate-grey/50" />
-          </div>
-        </div>
-        <div>
-          <h2 class="font-display text-2xl font-bold text-slate-deep">Admin Access Required</h2>
-          <p class="text-xs text-slate-grey mt-2 leading-relaxed">
-            This dashboard is restricted to authorized administrators only. Sign in to access product management and CRUD operations.
-          </p>
-        </div>
-        <button
-          @click="showLoginModal = true"
-          class="btn-primary inline-flex items-center gap-2 py-3 px-6 rounded-xl font-bold text-sm shadow-md hover:scale-[1.02] active:scale-95 transition-all"
-        >
-          <Lock class="h-4 w-4" />
-          Sign In as Admin
-        </button>
-      </div>
-    </div>
-
-    <!-- ── AUTHENTICATED DASHBOARD ────────────────────────────────────────────── -->
-    <template v-if="isAdmin">
+    <!-- ── DASHBOARD CONTENT ─────────────────────────────────────────────────── -->
     <!-- Header Title & Actions -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-grey/20 pb-6">
       <div>
@@ -738,8 +706,6 @@ function handleDelete() {
       </div>
     </Transition>
 
-    </template>
-    <!-- end v-if isAdmin -->
 
   </div>
 </template>
