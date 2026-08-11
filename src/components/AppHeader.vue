@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const mobileOpen = ref(false)
 
-const { isAdmin, adminUser, adminMode, logout } = useAuth()
+const { isAdmin, adminUser, logout } = useAuth()
 </script>
 
 <template>
@@ -68,7 +68,7 @@ const { isAdmin, adminUser, adminMode, logout } = useAuth()
               <ShieldCheck class="h-3.5 w-3.5 group-hover:hidden" />
               <LogOut class="h-3.5 w-3.5 hidden group-hover:block" />
               <span class="group-hover:hidden">
-                {{ adminMode === 'firebase' && adminUser?.email ? adminUser.email.split('@')[0] : 'Admin' }}
+                {{ adminUser?.email ? adminUser.email.split('@')[0] : 'Admin' }}
               </span>
               <span class="hidden group-hover:inline">Sign out</span>
             </button>

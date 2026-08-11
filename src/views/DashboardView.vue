@@ -20,7 +20,7 @@ import {
 import { useAuth } from '../composables/useAuth'
 
 // ── Admin Auth ─────────────────────────────────────────────────────────────────
-const { adminUser, adminMode, logout } = useAuth()
+const { adminUser, logout } = useAuth()
 
 const props = defineProps<{
   products: Product[]
@@ -253,7 +253,7 @@ function handleDelete() {
         <p class="text-xs text-slate-grey mt-1">
           Signed in as
           <span class="font-semibold text-slate-deep">
-            {{ adminMode === 'firebase' && adminUser?.email ? adminUser.email : 'Admin (Passcode)' }}
+            {{ adminUser?.email ?? 'Admin' }}
           </span>
           · <button @click="logout" class="text-red-500 hover:text-red-700 underline underline-offset-2 transition-colors">Sign out</button>
         </p>

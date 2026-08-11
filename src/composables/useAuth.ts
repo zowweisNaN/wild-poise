@@ -1,43 +1,40 @@
 import { ref } from 'vue'
 import {
-  signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
+  GoogleAuthProvider,
   type User
 } from 'firebase/auth'
 import { auth, isFirebaseConfigured } from '../firebase'
 
-// ── Passcode fallback (configurable via env var) ─────────────────────────────
-const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || 'wildpoise@admin'
-const PASSCODE_SESSION_KEY = 'wp_admin_passcode_auth'
+// ── Trusted admin email addresses ─────────────────────────────────────────────
+const ALLOWED_EMAILS = [
+  'anandak1708@gmail.com'
+]
 
 // ── Global reactive state (module-level singleton) ────────────────────────────
 const isAdmin = ref(false)
 const adminUser = ref<User | null>(null)
-const adminMode = ref<'firebase' | 'passcode' | null>(null)
 const isAuthLoading = ref(true)
 const authError = ref<string | null>(null)
 
-// Restore passcode session on load
-if (sessionStorage.getItem(PASSCODE_SESSION_KEY) === 'granted') {
-  isAdmin.value = true
-  adminMode.value = 'passcode'
-}
-
 // Watch Firebase Auth state if configured
 if (auth && isFirebaseConfigured) {
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
-      adminUser.value = user
-      isAdmin.value = true
-      adminMode.value = 'firebase'
+      const email = user.email ?? ''
+      if (!ALLOWED_EMAILS.includes(email.toLowerCase())) {
+        await signOut(auth)
+        isAdmin.value = false
+        adminUser.value = null
+      } else {
+        adminUser.value = user
+        isAdmin.value = true
+      }
     } else {
       adminUser.value = null
-      // Only revoke if currently firebase-authenticated (preserve passcode session)
-      if (adminMode.value === 'firebase') {
-        isAdmin.value = false
-        adminMode.value = null
-      }
+      isAdmin.value = false
     }
     isAuthLoading.value = false
   })
@@ -46,51 +43,44 @@ if (auth && isFirebaseConfigured) {
 }
 
 export function useAuth() {
-  async function loginWithEmail(email: string, password: string): Promise<boolean> {
+  async function loginWithGoogle(): Promise<boolean> {
     if (!auth) {
-      authError.value = 'Firebase Auth is not configured. Use Admin Passcode instead.'
+      authError.value = 'Firebase Auth is not configured. Add your credentials to .env.local.'
       return false
     }
     authError.value = null
     isAuthLoading.value = true
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password)
+      const provider = new GoogleAuthProvider()
+      const cred = await signInWithPopup(auth, provider)
+      const email = cred.user.email ?? ''
+
+      // Check against the trusted email list
+      if (!ALLOWED_EMAILS.includes(email.toLowerCase())) {
+        await signOut(auth)
+        authError.value = `Access denied. ${email} is not an authorized admin account.`
+        return false
+      }
+
       adminUser.value = cred.user
       isAdmin.value = true
-      adminMode.value = 'firebase'
       return true
     } catch (err: any) {
-      authError.value =
-        err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password'
-          ? 'Invalid email or password. Please try again.'
-          : err?.code === 'auth/too-many-requests'
-          ? 'Too many attempts. Please wait a moment before retrying.'
-          : err?.message || 'Authentication failed.'
+      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+        // User closed the popup — not really an error
+        authError.value = null
+      } else {
+        authError.value = err?.message || 'Google sign-in failed. Please try again.'
+      }
       return false
     } finally {
       isAuthLoading.value = false
     }
   }
 
-  function loginWithPasscode(passcode: string): boolean {
-    authError.value = null
-    if (passcode === ADMIN_PASSCODE) {
-      isAdmin.value = true
-      adminMode.value = 'passcode'
-      sessionStorage.setItem(PASSCODE_SESSION_KEY, 'granted')
-      return true
-    } else {
-      authError.value = 'Incorrect admin passcode. Please try again.'
-      return false
-    }
-  }
-
   async function logout() {
     authError.value = null
-    // Clear passcode session
-    sessionStorage.removeItem(PASSCODE_SESSION_KEY)
-    // Sign out of Firebase Auth if active
-    if (auth && adminMode.value === 'firebase') {
+    if (auth) {
       try {
         await signOut(auth)
       } catch (err: any) {
@@ -99,23 +89,15 @@ export function useAuth() {
     }
     isAdmin.value = false
     adminUser.value = null
-    adminMode.value = null
-  }
-
-  function clearError() {
-    authError.value = null
   }
 
   return {
     isAdmin,
     adminUser,
-    adminMode,
     isAuthLoading,
     authError,
     isFirebaseConfigured,
-    loginWithEmail,
-    loginWithPasscode,
-    logout,
-    clearError
+    loginWithGoogle,
+    logout
   }
 }
