@@ -1,9 +1,8 @@
 import { ref } from 'vue'
 import {
-  signInWithPopup,
+  signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  GoogleAuthProvider,
   type User
 } from 'firebase/auth'
 import { auth, isFirebaseConfigured } from '../firebase'
@@ -25,7 +24,7 @@ if (auth && isFirebaseConfigured) {
   onAuthStateChanged(_auth, async (user) => {
     if (user) {
       const email = user.email ?? ''
-      if (!ALLOWED_EMAILS.includes(email.toLowerCase())) {
+      if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email.toLowerCase())) {
         await signOut(_auth)
         isAdmin.value = false
         adminUser.value = null
@@ -44,22 +43,20 @@ if (auth && isFirebaseConfigured) {
 }
 
 export function useAuth() {
-  async function loginWithGoogle(): Promise<boolean> {
+  async function loginWithEmail(emailVal: string, passwordVal: string): Promise<boolean> {
     if (!auth) {
-      authError.value = 'Firebase Auth is not configured. Add your credentials to .env.local.'
+      authError.value = 'Firebase Auth is not configured. Check your credentials.'
       return false
     }
     authError.value = null
     isAuthLoading.value = true
     try {
-      const provider = new GoogleAuthProvider()
-      const cred = await signInWithPopup(auth, provider)
+      const cred = await signInWithEmailAndPassword(auth, emailVal, passwordVal)
       const email = cred.user.email ?? ''
 
-      // Check against the trusted email list
-      if (!ALLOWED_EMAILS.includes(email.toLowerCase())) {
+      if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email.toLowerCase())) {
         await signOut(auth)
-        authError.value = `Access denied. ${email} is not an authorized admin account.`
+        authError.value = `Access denied. ${email} is not authorized.`
         return false
       }
 
@@ -67,11 +64,12 @@ export function useAuth() {
       isAdmin.value = true
       return true
     } catch (err: any) {
-      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
-        // User closed the popup — not really an error
-        authError.value = null
+      if (err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password' || err?.code === 'auth/user-not-found') {
+        authError.value = 'Invalid email or password. Please check your credentials.'
+      } else if (err?.code === 'auth/too-many-requests') {
+        authError.value = 'Too many failed login attempts. Please try again later.'
       } else {
-        authError.value = err?.message || 'Google sign-in failed. Please try again.'
+        authError.value = err?.message || 'Authentication failed. Please try again.'
       }
       return false
     } finally {
@@ -92,13 +90,18 @@ export function useAuth() {
     adminUser.value = null
   }
 
+  function clearError() {
+    authError.value = null
+  }
+
   return {
     isAdmin,
     adminUser,
     isAuthLoading,
     authError,
     isFirebaseConfigured,
-    loginWithGoogle,
-    logout
+    loginWithEmail,
+    logout,
+    clearError
   }
 }

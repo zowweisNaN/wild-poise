@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ShieldCheck, AlertCircle, Loader2, ShoppingBag } from '@lucide/vue'
+import { ShieldCheck, Mail, Lock, Eye, EyeOff, LogIn, AlertCircle, Loader2, ShoppingBag } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
 
 const emit = defineEmits<{
   (e: 'authenticated'): void
 }>()
 
-const { loginWithGoogle, authError, isFirebaseConfigured } = useAuth()
+const { loginWithEmail, authError, isFirebaseConfigured } = useAuth()
 
+const email = ref('')
+const password = ref('')
+const showPassword = ref(false)
 const isLoading = ref(false)
 
-async function handleGoogleLogin() {
+async function handleLogin() {
+  if (!email.value || !password.value) return
   isLoading.value = true
-  const success = await loginWithGoogle()
+  const success = await loginWithEmail(email.value, password.value)
   isLoading.value = false
   if (success) emit('authenticated')
 }
@@ -25,7 +29,7 @@ async function handleGoogleLogin() {
     <div class="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-slate-deep/5 blur-3xl pointer-events-none" />
     <div class="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-warm-sand/10 blur-3xl pointer-events-none" />
 
-    <div class="w-full max-w-sm relative z-10">
+    <div class="w-full max-w-md relative z-10">
       <!-- Brand Logo -->
       <div class="flex items-center justify-center gap-2 mb-8">
         <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-deep text-soft-cream shadow-md">
@@ -50,11 +54,11 @@ async function handleGoogleLogin() {
         </div>
 
         <!-- Card Body -->
-        <div class="px-7 py-8 flex flex-col items-center gap-5">
+        <div class="px-7 py-7 space-y-5">
           <!-- Firebase not configured warning -->
           <div v-if="!isFirebaseConfigured" class="w-full p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
             <strong class="block mb-1">Firebase not configured</strong>
-            Add your Firebase credentials to <code class="bg-amber-100 px-1 rounded font-mono">.env.local</code>.
+            Add your Firebase credentials to <code class="bg-amber-100 px-1 rounded font-mono">.env</code> or <code class="bg-amber-100 px-1 rounded font-mono">.env.local</code>.
           </div>
 
           <!-- Error Message -->
@@ -69,22 +73,57 @@ async function handleGoogleLogin() {
             </div>
           </Transition>
 
-          <!-- Google Sign-In Button -->
-          <button
-            @click="handleGoogleLogin"
-            :disabled="isLoading || !isFirebaseConfigured"
-            class="w-full flex items-center justify-center gap-3 py-3 px-5 rounded-xl border border-slate-grey/25 bg-white hover:bg-slate-50 shadow-sm hover:shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm text-slate-700"
-          >
-            <Loader2 v-if="isLoading" class="h-5 w-5 animate-spin text-slate-500" />
-            <!-- Google logo SVG -->
-            <svg v-else viewBox="0 0 24 24" class="h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            {{ isLoading ? 'Signing in...' : 'Continue with Google' }}
-          </button>
+          <!-- Form Fields -->
+          <form @submit.prevent="handleLogin" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-deep mb-1.5">Email Address</label>
+              <div class="relative">
+                <Mail class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-grey" />
+                <input
+                  v-model="email"
+                  type="email"
+                  required
+                  placeholder="anandak1708@gmail.com"
+                  :disabled="!isFirebaseConfigured"
+                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-grey/30 bg-soft-cream/20 focus:outline-none focus:ring-2 focus:ring-slate-deep/40 transition-all text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-deep mb-1.5">Password</label>
+              <div class="relative">
+                <Lock class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-grey" />
+                <input
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  required
+                  placeholder="••••••••"
+                  :disabled="!isFirebaseConfigured"
+                  class="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-grey/30 bg-soft-cream/20 focus:outline-none focus:ring-2 focus:ring-slate-deep/40 transition-all text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  :disabled="!isFirebaseConfigured"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-grey hover:text-slate-deep transition-colors disabled:opacity-40"
+                >
+                  <EyeOff v-if="showPassword" class="h-4 w-4" />
+                  <Eye v-else class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              :disabled="!email || !password || isLoading || !isFirebaseConfigured"
+              class="w-full btn-primary py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 hover:scale-[1.01] active:scale-95 transition-all shadow-md mt-2"
+            >
+              <Loader2 v-if="isLoading" class="h-4 w-4 animate-spin" />
+              <LogIn v-else class="h-4 w-4" />
+              {{ isLoading ? 'Signing in...' : 'Sign In' }}
+            </button>
+          </form>
         </div>
 
         <!-- Footer hint -->
