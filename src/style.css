@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-soft-cream text-slate-deep font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-soft-cream;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-grey rounded-full;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
+           bg-slate-deep text-soft-cream font-semibold text-sm
+           transition-all duration-200 hover:brightness-110 active:scale-95
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm-sand;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
+           border-2 border-slate-deep text-slate-deep font-semibold text-sm
+           transition-all duration-200 hover:bg-slate-deep hover:text-soft-cream active:scale-95
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm-sand;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold
+           bg-warm-sand text-slate-deep tracking-wide;
+  }
+
+  .section-title {
+    @apply font-display font-bold text-slate-deep;
+  }
+
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-sm border border-slate-grey/30 rounded-2xl;
+  }
+}
