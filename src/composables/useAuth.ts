@@ -10,7 +10,8 @@ import { auth, isFirebaseConfigured } from '../firebase'
 // ── Trusted admin email addresses ─────────────────────────────────────────────
 const ALLOWED_EMAILS = [
   'anandak1708@gmail.com',
-  'arya1006@gmail.com'
+  'arya1006@gmail.com',
+  'aryapuja1006@gmail.com'
 ]
 
 // ── Global reactive state (module-level singleton) ────────────────────────────
