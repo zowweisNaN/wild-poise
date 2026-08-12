@@ -88,7 +88,6 @@ const formState = ref<{
   inStock: boolean
   shopeeUrl: string
   tokopediaUrl: string
-  whatsappNumber: string
 }>({
   id: '',
   title: '',
@@ -100,8 +99,7 @@ const formState = ref<{
   description: '',
   inStock: true,
   shopeeUrl: 'https://shopee.co.id',
-  tokopediaUrl: 'https://tokopedia.com',
-  whatsappNumber: '628123456789'
+  tokopediaUrl: 'https://tokopedia.com'
 })
 
 function formatRupiah(amount: number): string {
@@ -125,8 +123,7 @@ function openAddModal() {
     description: 'Wild Poise unisex apparel. Kemeja berkualitas premium dengan bahan adem dan nyaman.',
     inStock: true,
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise'
   }
   showFormModal.value = true
 }
@@ -144,8 +141,7 @@ function openEditModal(prod: Product) {
     description: prod.description,
     inStock: prod.inStock !== false,
     shopeeUrl: prod.shopeeUrl || '',
-    tokopediaUrl: prod.tokopediaUrl || '',
-    whatsappNumber: prod.whatsappNumber || '628123456789'
+    tokopediaUrl: prod.tokopediaUrl || ''
   }
   showFormModal.value = true
 }
@@ -187,8 +183,7 @@ async function handleSaveProduct() {
     description: formState.value.description,
     inStock: formState.value.inStock,
     shopeeUrl: formState.value.shopeeUrl,
-    tokopediaUrl: formState.value.tokopediaUrl,
-    whatsappNumber: formState.value.whatsappNumber
+    tokopediaUrl: formState.value.tokopediaUrl
   }
 
   if (formState.value.originalPrice && formState.value.originalPrice > 0) {

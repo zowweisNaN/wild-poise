@@ -18,11 +18,13 @@ export function useCheckout(product: Product) {
   }
 
   function openWhatsApp() {
-    const size = selectedSize.value ? ` ukuran *${selectedSize.value}*` : ''
+    const phone = '6287761561909'
+    const size = selectedSize.value ? `\nUkuran: *${selectedSize.value}*` : ''
+    const price = product.formattedPrice ? `\nHarga: ${product.formattedPrice}` : ''
     const message = encodeURIComponent(
-      `Halo, saya tertarik dengan *${product.title}*${size} - ${product.formattedPrice}. Apakah masih tersedia?`
+      `Halo, saya ingin memesan *${product.title}*${size}${price}\nApakah stok masih tersedia?`
     )
-    const url = `https://wa.me/${product.whatsappNumber}?text=${message}`
+    const url = `https://wa.me/${phone}?text=${message}`
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 

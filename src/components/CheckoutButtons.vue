@@ -18,13 +18,14 @@ const handleWhatsAppClick = () => {
   if (!props.selectedSize) return;
 
   const phone = "6287761561909";
-  const productName = props.product;
+  const productName = props.product.title;
   const size = props.selectedSize;
+  const price = props.product.formattedPrice;
 
-  const message = `Halo Saya ingin memesan ${productName} - Ukuran: ${size}`;
+  const message = `Halo, saya ingin memesan *${productName}*\nUkuran: *${size}*\nHarga: ${price}\nApakah stok masih tersedia?`;
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-  window.open(url, "_blank");
+  window.open(url, "_blank", "noopener,noreferrer");
   emit("whatsapp");
 };
 </script>

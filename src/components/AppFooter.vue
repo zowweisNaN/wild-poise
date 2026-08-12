@@ -58,7 +58,7 @@ import { ShoppingBag, Camera, MessageCircle } from '@lucide/vue'
               Tokopedia
             </a>
             <a
-              href="https://wa.me/628123456789"
+              href="https://wa.me/6287761561909"
               target="_blank"
               rel="noopener noreferrer"
               class="flex items-center gap-3 text-sm text-slate-grey hover:text-soft-cream transition-colors group"
@@ -78,7 +78,7 @@ import { ShoppingBag, Camera, MessageCircle } from '@lucide/vue'
           <a href="#" class="text-slate-grey hover:text-warm-sand transition-colors" aria-label="Instagram">
             <Camera class="h-4 w-4" />
           </a>
-          <a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" class="text-slate-grey hover:text-warm-sand transition-colors" aria-label="WhatsApp">
+          <a href="https://wa.me/6287761561909" target="_blank" rel="noopener noreferrer" class="text-slate-grey hover:text-warm-sand transition-colors" aria-label="WhatsApp">
             <MessageCircle class="h-4 w-4" />
           </a>
         </div>

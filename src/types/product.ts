@@ -15,5 +15,5 @@ export interface Product {
   inStock?: boolean
   shopeeUrl: string
   tokopediaUrl: string
-  whatsappNumber: string
+  whatsappNumber?: string
 }

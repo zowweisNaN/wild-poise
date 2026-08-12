@@ -23,8 +23,7 @@ export const initialProducts: Product[] = [
     availableSizes: ['S', 'M', 'L', 'XL', 'XXL'],
     description: 'Wild Poise unisex apparel. Kemeja linen santai berkerah Cuban yang dirancang khusus untuk kenyamanan maksimal sehari-hari dengan siluet relaxed fit yang versatile.',
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise%20linen',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20linen',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20linen'
   },
   {
     id: 'wp-02',
@@ -42,8 +41,7 @@ export const initialProducts: Product[] = [
     availableSizes: ['M', 'L', 'XL'],
     description: 'Wild Poise unisex apparel. Kemeja flannel bermotif kotak klasik dengan sentuhan vintage. Terbuat dari katun flannel lembut yang hangat dan tetap breathable.',
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise%20flannel',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20flannel',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20flannel'
   },
   {
     id: 'wp-03',
@@ -59,8 +57,7 @@ export const initialProducts: Product[] = [
     availableSizes: ['S', 'M', 'L', 'XL'],
     description: 'Wild Poise unisex apparel. Kemeja motif tropis eksklusif dari seri Botanical. Desain bold dan fresh cocok untuk outfit santai, pantai, maupun iklim tropis.',
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise%20hawaiian',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20hawaiian',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20hawaiian'
   },
   {
     id: 'wp-04',
@@ -78,8 +75,7 @@ export const initialProducts: Product[] = [
     availableSizes: ['S', 'M', 'L', 'XL', 'XXL'],
     description: 'Wild Poise unisex apparel. Perpaduan warisan budaya batik modern dengan gaya kasual urban kontemporer. Potongan trendi cocok untuk semi-formal dan momen kasual.',
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise%20batik',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20batik',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20batik'
   },
   {
     id: 'wp-05',
@@ -97,8 +93,7 @@ export const initialProducts: Product[] = [
     availableSizes: ['S', 'M', 'L', 'XL'],
     description: 'Wild Poise unisex apparel. Kemeja lengan pendek esensial berwarna netral polos dengan bahan premium rayon katun yang adem dan nyaman sepanjang hari.',
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise%20short%20sleeve',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20short%20sleeve',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20short%20sleeve'
   },
   {
     id: 'wp-06',
@@ -114,8 +109,7 @@ export const initialProducts: Product[] = [
     availableSizes: ['M', 'L', 'XL', 'XXL'],
     description: 'Wild Poise unisex apparel. Linen shirt bertekstur lembut dalam nuansa earthy tone. Memberikan tampilan Effortless Chic yang santai dan modern.',
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise%20breeze%20linen',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20breeze%20linen',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20breeze%20linen'
   },
   {
     id: 'wp-07',
@@ -133,8 +127,7 @@ export const initialProducts: Product[] = [
     availableSizes: ['S', 'M', 'L', 'XL'],
     description: 'Wild Poise unisex apparel. Flannel bermotif shadow plaid gelap yang edgy. Dapat dipakai sebagai kemeja utama maupun outer/overshirt layering.',
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise%20shadow%20flannel',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20shadow%20flannel',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20shadow%20flannel'
   },
   {
     id: 'wp-08',
@@ -152,8 +145,7 @@ export const initialProducts: Product[] = [
     availableSizes: ['S', 'M', 'L', 'XL'],
     description: 'Wild Poise unisex apparel. Motif cetak gradasi warna hangat terinspirasi dari keindahan sunset. Ringan, jatuh sempurna di badan, dan siap melengkapi gaya liburan.',
     shopeeUrl: 'https://shopee.co.id/search?keyword=wild%20poise%20sunset%20hawaiian',
-    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20sunset%20hawaiian',
-    whatsappNumber: '628123456789'
+    tokopediaUrl: 'https://www.tokopedia.com/search?q=wild%20poise%20sunset%20hawaiian'
   }
 ]
 
