@@ -7,20 +7,17 @@ import {
 } from 'firebase/auth'
 import { auth, isFirebaseConfigured } from '../firebase'
 
-// ── Trusted admin email addresses ─────────────────────────────────────────────
 const ALLOWED_EMAILS = [
   'anandak1708@gmail.com',
-  'arya1006@gmail.com',
   'aryapuja1006@gmail.com'
 ]
 
-// ── Global reactive state (module-level singleton) ────────────────────────────
-const isAdmin = ref(false)
+const storedAuth = typeof localStorage !== 'undefined' ? localStorage.getItem('wp_admin_logged_in') === 'true' : false
+const isAdmin = ref(storedAuth)
 const adminUser = ref<User | null>(null)
 const isAuthLoading = ref(true)
 const authError = ref<string | null>(null)
 
-// Watch Firebase Auth state if configured
 if (auth && isFirebaseConfigured) {
   const _auth = auth
   onAuthStateChanged(_auth, async (user) => {
@@ -30,13 +27,16 @@ if (auth && isFirebaseConfigured) {
         await signOut(_auth)
         isAdmin.value = false
         adminUser.value = null
+        localStorage.removeItem('wp_admin_logged_in')
       } else {
         adminUser.value = user
         isAdmin.value = true
+        localStorage.setItem('wp_admin_logged_in', 'true')
       }
     } else {
       adminUser.value = null
       isAdmin.value = false
+      localStorage.removeItem('wp_admin_logged_in')
     }
     isAuthLoading.value = false
   })
@@ -59,11 +59,14 @@ export function useAuth() {
       if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email.toLowerCase())) {
         await signOut(auth)
         authError.value = `Access denied. ${email} is not authorized.`
+        isAdmin.value = false
+        localStorage.removeItem('wp_admin_logged_in')
         return false
       }
 
       adminUser.value = cred.user
       isAdmin.value = true
+      localStorage.setItem('wp_admin_logged_in', 'true')
       return true
     } catch (err: any) {
       if (err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password' || err?.code === 'auth/user-not-found') {
@@ -90,6 +93,7 @@ export function useAuth() {
     }
     isAdmin.value = false
     adminUser.value = null
+    localStorage.removeItem('wp_admin_logged_in')
   }
 
   function clearError() {

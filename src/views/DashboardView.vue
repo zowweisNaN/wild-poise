@@ -28,6 +28,7 @@ const props = defineProps<{
   isFirebaseConfigured: boolean
   isSeeding: boolean
   seedSuccess: boolean
+  isLoading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -373,7 +374,56 @@ function handleDelete() {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-grey/10 font-medium">
+            <!-- Loading Skeletal Table Rows -->
+            <template v-if="isLoading">
+              <tr v-for="i in 5" :key="i" class="animate-pulse">
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="h-12 w-12 rounded-xl bg-slate-200 shrink-0"></div>
+                    <div class="space-y-1.5 flex-1">
+                      <div class="h-4 bg-slate-200 rounded w-44"></div>
+                      <div class="h-3 bg-slate-100 rounded w-20"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-4">
+                  <div class="h-6 w-20 bg-slate-200 rounded-md"></div>
+                </td>
+                <td class="px-4 py-4">
+                  <div class="h-4 w-24 bg-slate-200 rounded"></div>
+                </td>
+                <td class="px-4 py-4">
+                  <div class="h-6 w-20 bg-slate-200 rounded-full"></div>
+                </td>
+                <td class="px-4 py-4">
+                  <div class="flex gap-1">
+                    <div class="h-4 w-6 bg-slate-200 rounded"></div>
+                    <div class="h-4 w-6 bg-slate-200 rounded"></div>
+                    <div class="h-4 w-6 bg-slate-200 rounded"></div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <div class="flex justify-end gap-2">
+                    <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
+                    <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
+                    <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
+                  </div>
+                </td>
+              </tr>
+            </template>
+
+            <!-- Empty Filter State -->
+            <tr v-else-if="filteredProducts.length === 0">
+              <td colspan="6" class="px-6 py-12 text-center text-slate-grey">
+                <Package class="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                <p class="font-bold text-slate-deep">No products found</p>
+                <p class="text-xs mt-0.5">Try adjusting your search query or category filter.</p>
+              </td>
+            </tr>
+
+            <!-- Product Rows -->
             <tr
+              v-else
               v-for="prod in filteredProducts"
               :key="prod.id"
               class="hover:bg-soft-cream/40 transition-colors group"
@@ -467,15 +517,6 @@ function handleDelete() {
                     <Trash2 class="h-4 w-4" />
                   </button>
                 </div>
-              </td>
-            </tr>
-
-            <!-- Empty Filter State -->
-            <tr v-if="filteredProducts.length === 0">
-              <td colspan="6" class="px-6 py-12 text-center text-slate-grey">
-                <Package class="h-10 w-10 mx-auto mb-2 text-slate-300" />
-                <p class="font-bold text-slate-deep">No products found</p>
-                <p class="text-xs mt-0.5">Try adjusting your search query or category filter.</p>
               </td>
             </tr>
           </tbody>

@@ -1,8 +1,11 @@
 import type { Product } from '../types/product'
+import { db, isFirebaseConfigured } from '../firebase'
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore'
 
 export const categories = ['All', 'Short Sleeve', 'Flannel', 'Linen', 'Hawaiian', 'Batik'] as const
 
-export const products: Product[] = [
+// Initial fallback product dataset
+export const initialProducts: Product[] = [
   {
     id: 'wp-01',
     title: 'Wild Poise Cuban Linen Resort Shirt',
@@ -153,3 +156,67 @@ export const products: Product[] = [
     whatsappNumber: '628123456789'
   }
 ]
+
+// Default empty products array; products are dynamically loaded from Firebase Firestore
+export const products: Product[] = []
+
+/**
+ * Fetch products directly from Firebase Firestore 'products' collection.
+ */
+export async function getFirebaseProducts(): Promise<Product[]> {
+  if (!db || !isFirebaseConfigured) {
+    return []
+  }
+
+  try {
+    const colRef = collection(db, 'products')
+    const snapshot = await getDocs(colRef)
+
+    if (snapshot.empty) {
+      // Auto seed initial products into Firebase if collection is empty
+      await seedFirebaseProducts(initialProducts)
+      const seededSnapshot = await getDocs(colRef)
+      return seededSnapshot.docs.map((docSnap) => ({
+        ...(docSnap.data() as Product),
+        id: docSnap.id
+      }))
+    }
+
+    return snapshot.docs.map((docSnap) => ({
+      ...(docSnap.data() as Product),
+      id: docSnap.id
+    }))
+  } catch (error) {
+    console.warn('Error fetching products from Firebase Firestore:', error)
+    return []
+  }
+}
+
+/**
+ * Save or update a product in Firebase Firestore
+ */
+export async function saveFirebaseProduct(product: Product): Promise<void> {
+  if (!db || !isFirebaseConfigured) return
+  const docRef = doc(db, 'products', product.id)
+  await setDoc(docRef, product, { merge: true })
+}
+
+/**
+ * Delete a product from Firebase Firestore by ID
+ */
+export async function deleteFirebaseProduct(productId: string): Promise<void> {
+  if (!db || !isFirebaseConfigured) return
+  const docRef = doc(db, 'products', productId)
+  await deleteDoc(docRef)
+}
+
+/**
+ * Seed array of products into Firebase Firestore 'products' collection
+ */
+export async function seedFirebaseProducts(prodsToSeed: Product[] = initialProducts): Promise<void> {
+  if (!db || !isFirebaseConfigured) return
+  for (const prod of prodsToSeed) {
+    const docRef = doc(db, 'products', prod.id)
+    await setDoc(docRef, prod, { merge: true })
+  }
+}

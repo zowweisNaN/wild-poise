@@ -3,11 +3,13 @@ import { ref, computed } from 'vue'
 import type { Product, ShirtCategory, ShirtSize } from '../types/product'
 import SidebarFilter, { type FilterState } from '../components/SidebarFilter.vue'
 import ProductCard from '../components/ProductCard.vue'
+import ProductSkeleton from '../components/ProductSkeleton.vue'
 import { SlidersHorizontal, X, ShoppingBag, Filter } from '@lucide/vue'
 
 const props = defineProps<{
   products: Product[]
   categories: readonly ShirtCategory[]
+  isLoading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -166,9 +168,17 @@ function resetFilters() {
 
         <!-- ── Right Product Grid ─────────────────────────────────────────── -->
         <div class="lg:col-span-3">
+          <!-- Loading state (Skeletal Grid) -->
+          <div
+            v-if="isLoading"
+            class="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6"
+          >
+            <ProductSkeleton v-for="i in 6" :key="i" />
+          </div>
+
           <!-- Empty state -->
           <div
-            v-if="filteredProducts.length === 0"
+            v-else-if="filteredProducts.length === 0"
             class="flex flex-col items-center justify-center py-20 text-center bg-white/60 rounded-2xl border border-dashed border-slate-grey/40 p-6"
           >
             <ShoppingBag class="h-10 w-10 text-slate-grey mb-3 opacity-50" />

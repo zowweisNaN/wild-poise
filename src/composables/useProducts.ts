@@ -8,10 +8,10 @@ import {
   type Unsubscribe
 } from 'firebase/firestore'
 import type { Product } from '../types/product'
-import { products as initialProducts } from '../data/products'
+import { initialProducts } from '../data/products'
 import { db, isFirebaseConfigured } from '../firebase'
 
-const products = ref<Product[]>([...initialProducts])
+const products = ref<Product[]>([])
 const isLoading = ref(true)
 const isLiveFirebase = ref(false)
 const error = ref<string | null>(null)
@@ -32,11 +32,11 @@ export function useProducts() {
           colRef,
           (snapshot) => {
             if (snapshot.empty) {
-              // Firestore is connected but collection is empty
-              // Maintain local products until seeded
-              products.value = [...initialProducts]
+              // Firestore connected but collection is empty -> auto seed into Firebase
+              products.value = []
               isLiveFirebase.value = true
               isLoading.value = false
+              seedDatabase()
             } else {
               const firestoreProducts: Product[] = snapshot.docs.map((docSnap) => {
                 const data = docSnap.data() as Product
@@ -53,7 +53,7 @@ export function useProducts() {
           (err) => {
             console.warn('Firestore subscription notice:', err)
             error.value = err.message
-            products.value = [...initialProducts]
+            products.value = []
             isLiveFirebase.value = false
             isLoading.value = false
           }
@@ -61,13 +61,13 @@ export function useProducts() {
       } catch (err: any) {
         console.warn('Firestore initialization fallback:', err)
         error.value = err?.message || 'Failed to connect to Firestore'
-        products.value = [...initialProducts]
+        products.value = []
         isLiveFirebase.value = false
         isLoading.value = false
       }
     } else {
-      // Local Fallback Mode
-      products.value = [...initialProducts]
+      // Firebase not configured
+      products.value = []
       isLiveFirebase.value = false
       isLoading.value = false
     }

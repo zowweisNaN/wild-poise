@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product, ShirtCategory } from "../types/product";
 import ProductCard from "../components/ProductCard.vue";
+import ProductSkeleton from "../components/ProductSkeleton.vue";
 import CategoryFilter from "../components/CategoryFilter.vue";
 import {
   ShoppingBag,
@@ -15,6 +16,7 @@ const props = defineProps<{
   categories: readonly ShirtCategory[];
   activeCategory: ShirtCategory;
   filteredProducts: Product[];
+  isLoading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -129,9 +131,17 @@ const emit = defineEmits<{
         />
       </div>
 
+      <!-- Loading state (Skeletal Grid) -->
+      <div
+        v-if="isLoading"
+        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
+      >
+        <ProductSkeleton v-for="i in 8" :key="i" />
+      </div>
+
       <!-- Empty state -->
       <div
-        v-if="filteredProducts.length === 0"
+        v-else-if="filteredProducts.length === 0"
         class="flex flex-col items-center justify-center py-24 text-center"
       >
         <ShoppingBag class="h-12 w-12 text-slate-grey/40 mb-4" />

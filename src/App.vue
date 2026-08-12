@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import type { Product, ShirtCategory } from './types/product'
 import { categories } from './data/products'
 import AppHeader from './components/AppHeader.vue'
@@ -15,6 +15,7 @@ import { useAuth } from './composables/useAuth'
 // ── Firebase Products Composable ──────────────────────────────────────────────
 const {
   products,
+  isLoading,
   isLiveFirebase,
   isFirebaseConfigured,
   isSeeding,
@@ -26,7 +27,7 @@ const {
   deleteProduct
 } = useProducts()
 
-const { isAdmin } = useAuth()
+const { isAdmin, isAuthLoading } = useAuth()
 
 // ── Navigation & Page Routing State ────────────────────────────────────────────
 const activePage = ref<'home' | 'collection' | 'dashboard' | 'login'>('collection')
@@ -36,16 +37,20 @@ const homeCategory = ref<ShirtCategory>('All')
 function syncPageFromUrl() {
   const path = window.location.pathname.toLowerCase()
   if (path.includes('dashboard')) {
-    if (isAdmin.value) {
+    if (isAdmin.value || isAuthLoading.value) {
       activePage.value = 'dashboard'
     } else {
       activePage.value = 'login'
-      window.history.replaceState({}, '', '/login')
+      if (window.location.pathname !== '/login') {
+        window.history.replaceState({}, '', '/login')
+      }
     }
   } else if (path.includes('login')) {
     if (isAdmin.value) {
       activePage.value = 'dashboard'
-      window.history.replaceState({}, '', '/dashboard')
+      if (window.location.pathname !== '/dashboard') {
+        window.history.replaceState({}, '', '/dashboard')
+      }
     } else {
       activePage.value = 'login'
     }
@@ -55,6 +60,10 @@ function syncPageFromUrl() {
     activePage.value = 'collection'
   }
 }
+
+watch([isAdmin, isAuthLoading], () => {
+  syncPageFromUrl()
+})
 
 onMounted(() => {
   initProducts()
@@ -136,6 +145,7 @@ function closeProduct() {
         :categories="categories"
         :active-category="homeCategory"
         :filtered-products="homeFilteredProducts"
+        :is-loading="isLoading"
         @change-category="homeCategory = $event"
         @open-product="openProduct"
         @go-to-collection="navigateTo('collection')"
@@ -146,6 +156,7 @@ function closeProduct() {
         v-else-if="activePage === 'collection'"
         :products="products"
         :categories="categories"
+        :is-loading="isLoading"
         @open-product="openProduct"
         @go-to-home="navigateTo('home')"
       />
@@ -158,6 +169,7 @@ function closeProduct() {
         :is-firebase-configured="isFirebaseConfigured"
         :is-seeding="isSeeding"
         :seed-success="seedSuccess"
+        :is-loading="isLoading"
         @add-product="addProduct"
         @update-product="updateProduct"
         @delete-product="deleteProduct"
