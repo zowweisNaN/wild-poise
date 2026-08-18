@@ -391,18 +391,7 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <!-- Counter & Autoplay State -->
-        <div
-          class="hidden sm:flex items-center gap-3 text-xs font-mono tracking-wider text-slate-grey"
-        >
-          <span>0{{ currentSlide + 1 }} / 0{{ slides.length }}</span>
-          <span class="h-1 w-1 rounded-full bg-slate-grey/50" />
-          <span
-            class="text-[11px] font-sans font-medium text-warm-sand/80 uppercase"
-          >
-            {{ isPaused ? "Paused" : "Autoplay" }}
-          </span>
-        </div>
+
       </div>
 
       <!-- Feature Strip integrated into bottom of Hero section -->
@@ -411,19 +400,19 @@ onUnmounted(() => {
       >
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div class="flex items-center gap-3 text-slate-grey">
+            <div class="flex items-center justify-center gap-3 text-slate-grey">
               <Truck class="h-5 w-5 flex-shrink-0 text-warm-sand" />
               <span class="text-xs sm:text-sm font-medium"
                 >Free shipping &gt; Rp 300K</span
               >
             </div>
-            <div class="flex items-center gap-3 text-slate-grey">
+            <div class="flex items-center justify-center gap-3 text-slate-grey">
               <RotateCcw class="h-5 w-5 flex-shrink-0 text-warm-sand" />
               <span class="text-xs sm:text-sm font-medium"
                 >7-day free return</span
               >
             </div>
-            <div class="hidden sm:flex items-center gap-3 text-slate-grey">
+            <div class="hidden sm:flex items-center justify-center gap-3 text-slate-grey">
               <TrendingUp class="h-5 w-5 flex-shrink-0 text-warm-sand" />
               <span class="text-xs sm:text-sm font-medium"
                 >1,200+ happy customers</span

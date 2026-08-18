@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Menu, X, ShoppingBag, User, Layers, ShieldCheck, LogOut, Lock } from '@lucide/vue'
+import { Menu, X, ShoppingBag, User, Layers, ShieldCheck, LogOut } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
 
 const props = defineProps<{
@@ -57,10 +57,9 @@ const { isAdmin, adminUser, logout } = useAuth()
 
         <!-- Right Side Controls -->
         <div class="flex items-center gap-2">
-          <!-- Admin Status Chip (Desktop) -->
-          <div class="hidden sm:flex items-center">
+          <!-- Admin Status Chip (Desktop - only shown when signed in) -->
+          <div v-if="isAdmin" class="hidden sm:flex items-center">
             <button
-              v-if="isAdmin"
               @click="logout"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-800 border border-emerald-500/30 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all group"
               title="Click to sign out as admin"
@@ -71,16 +70,6 @@ const { isAdmin, adminUser, logout } = useAuth()
                 {{ adminUser?.email ? adminUser.email.split('@')[0] : 'Admin' }}
               </span>
               <span class="hidden group-hover:inline">Sign out</span>
-            </button>
-
-            <button
-              v-else
-              @click="emit('navigate', 'dashboard')"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 transition-all"
-              title="Sign in as admin"
-            >
-              <Lock class="h-3.5 w-3.5" />
-              Admin
             </button>
           </div>
 
@@ -129,23 +118,14 @@ const { isAdmin, adminUser, logout } = useAuth()
             Collections Catalog
           </button>
 
-          <!-- Admin action in mobile -->
-          <div class="border-t border-slate-grey/20 pt-2 mt-2">
+          <!-- Admin action in mobile (only shown when signed in) -->
+          <div v-if="isAdmin" class="border-t border-slate-grey/20 pt-2 mt-2">
             <button
-              v-if="isAdmin"
               @click="logout; mobileOpen = false"
               class="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               <LogOut class="h-4 w-4" />
               Sign Out (Admin)
-            </button>
-            <button
-              v-else
-              @click="emit('navigate', 'dashboard'); mobileOpen = false"
-              class="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-warm-sand/30 rounded-lg transition-colors"
-            >
-              <Lock class="h-4 w-4" />
-              Admin Sign In
             </button>
           </div>
 
