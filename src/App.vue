@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import type { Product, ShirtCategory } from './types/product'
-import { categories } from './data/products'
 import AppHeader from './components/AppHeader.vue'
 import AppFooter from './components/AppFooter.vue'
 import ProductModal from './components/ProductModal.vue'
@@ -11,6 +10,7 @@ import DashboardView from './views/DashboardView.vue'
 import LoginView from './views/LoginView.vue'
 import { useProducts } from './composables/useProducts'
 import { useAuth } from './composables/useAuth'
+import { useCategories } from './composables/useCategories'
 
 // ── Firebase Products Composable ──────────────────────────────────────────────
 const {
@@ -26,6 +26,8 @@ const {
   updateProduct,
   deleteProduct
 } = useProducts()
+
+const { categoryNames, initCategories } = useCategories()
 
 const { isAdmin, isAuthLoading } = useAuth()
 
@@ -67,6 +69,7 @@ watch([isAdmin, isAuthLoading], () => {
 
 onMounted(() => {
   initProducts()
+  initCategories()
   syncPageFromUrl()
   window.addEventListener('popstate', syncPageFromUrl)
 })
@@ -142,7 +145,7 @@ function closeProduct() {
       <HomeView
         v-if="activePage === 'home'"
         :products="products"
-        :categories="categories"
+        :categories="categoryNames"
         :active-category="homeCategory"
         :filtered-products="homeFilteredProducts"
         :is-loading="isLoading"
@@ -155,7 +158,7 @@ function closeProduct() {
       <CollectionView
         v-else-if="activePage === 'collection'"
         :products="products"
-        :categories="categories"
+        :categories="categoryNames"
         :is-loading="isLoading"
         @open-product="openProduct"
         @go-to-home="navigateTo('home')"

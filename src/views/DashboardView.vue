@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Product, ShirtCategory, ShirtSize } from '../types/product'
-import { categories } from '../data/products'
+import type { Product, ShirtCategory, ShirtSize, CategoryItem } from '../types/product'
+import { useCategories } from '../composables/useCategories'
 import {
   Plus,
   Edit2,
@@ -15,12 +15,25 @@ import {
   Layers,
   AlertTriangle,
   RefreshCw,
-  ShieldCheck
+  ShieldCheck,
+  FolderPlus,
+  AlertCircle
 } from '@lucide/vue'
 import { useAuth } from '../composables/useAuth'
 
 // ── Admin Auth ─────────────────────────────────────────────────────────────────
 const { adminUser, logout } = useAuth()
+
+// ── Categories Composable ──────────────────────────────────────────────────────
+const {
+  categoryList,
+  categoryNames,
+  rawCategoryNames,
+  isLoadingCategories,
+  addCategory,
+  updateCategory,
+  deleteCategory
+} = useCategories()
 
 const props = defineProps<{
   products: Product[]
@@ -38,6 +51,9 @@ const emit = defineEmits<{
   (e: 'open-product', product: Product): void
   (e: 'seed-database'): void
 }>()
+
+// ── Active Dashboard View Tab ─────────────────────────────────────────────────
+const activeTab = ref<'products' | 'categories'>('products')
 
 // ── Search & Filter State ─────────────────────────────────────────────────────
 const searchQuery = ref('')
@@ -62,26 +78,29 @@ const totalProducts = computed(() => props.products.length)
 const inStockCount = computed(() => props.products.filter(p => p.inStock !== false).length)
 const outOfStockCount = computed(() => props.products.filter(p => p.inStock === false).length)
 
-// ── Modal State (Add / Edit) ──────────────────────────────────────────────────
+// Product counts per category
+const categoryProductCounts = computed(() => {
+  const map: Record<string, number> = {}
+  categoryList.value.forEach(c => { map[c.name] = 0 })
+  props.products.forEach(p => {
+    map[p.category] = (map[p.category] || 0) + 1
+  })
+  return map
+})
+
+// ── Product Modal State (Add / Edit) ──────────────────────────────────────────
 const showFormModal = ref(false)
 const isEditing = ref(false)
 const isSubmitting = ref(false)
 
 const availableSizeOptions: ShirtSize[] = ['S', 'M', 'L', 'XL', 'XXL']
-const categoryOptions: Exclude<ShirtCategory, 'All'>[] = [
-  'Short Sleeve',
-  'Flannel',
-  'Linen',
-  'Hawaiian',
-  'Batik'
-]
 
 const formState = ref<{
   id: string
   title: string
   price: number
   originalPrice: number | null
-  category: Exclude<ShirtCategory, 'All'>
+  category: string
   imagesText: string
   availableSizes: ShirtSize[]
   description: string
@@ -112,12 +131,13 @@ function formatRupiah(amount: number): string {
 
 function openAddModal() {
   isEditing.value = false
+  const defaultCat = rawCategoryNames.value[0] || 'Linen'
   formState.value = {
     id: `wp-${String(Date.now()).slice(-4)}`,
     title: '',
     price: 249000,
     originalPrice: 349000,
-    category: 'Linen',
+    category: defaultCat,
     imagesText: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=80',
     availableSizes: ['S', 'M', 'L', 'XL'],
     description: 'Wild Poise unisex apparel. Kemeja berkualitas premium dengan bahan adem dan nyaman.',
@@ -205,7 +225,7 @@ async function handleSaveProduct() {
   }
 }
 
-// ── Delete Confirmation Modal State ───────────────────────────────────────────
+// ── Delete Product Confirmation Modal State ─────────────────────────────────────
 const showDeleteModal = ref(false)
 const productToDelete = ref<Product | null>(null)
 
@@ -221,13 +241,105 @@ function handleDelete() {
     productToDelete.value = null
   }
 }
+
+// ── Category CRUD Modal State & Handlers ─────────────────────────────────────
+const showCategoryModal = ref(false)
+const isEditingCategory = ref(false)
+const categoryError = ref('')
+const categorySubmitting = ref(false)
+
+const categoryForm = ref<{
+  id: string
+  name: string
+  description: string
+}>({
+  id: '',
+  name: '',
+  description: ''
+})
+
+function openAddCategoryModal() {
+  isEditingCategory.value = false
+  categoryError.value = ''
+  categoryForm.value = { id: '', name: '', description: '' }
+  showCategoryModal.value = true
+}
+
+function openEditCategoryModal(cat: CategoryItem) {
+  isEditingCategory.value = true
+  categoryError.value = ''
+  categoryForm.value = { id: cat.id, name: cat.name, description: cat.description || '' }
+  showCategoryModal.value = true
+}
+
+async function handleSaveCategory() {
+  categoryError.value = ''
+  if (!categoryForm.value.name.trim()) {
+    categoryError.value = 'Category name is required.'
+    return
+  }
+
+  categorySubmitting.value = true
+  try {
+    if (isEditingCategory.value) {
+      const { oldName, newName } = await updateCategory(
+        categoryForm.value.id,
+        categoryForm.value.name,
+        categoryForm.value.description
+      )
+
+      // Cascade update to products if category name changed
+      if (oldName !== newName) {
+        props.products.forEach(p => {
+          if (p.category === oldName) {
+            emit('update-product', { ...p, category: newName })
+          }
+        })
+      }
+    } else {
+      await addCategory(categoryForm.value.name, categoryForm.value.description)
+    }
+    showCategoryModal.value = false
+  } catch (err: any) {
+    categoryError.value = err?.message || 'Failed to save category.'
+  } finally {
+    categorySubmitting.value = false
+  }
+}
+
+// Category Delete Modal
+const showCategoryDeleteModal = ref(false)
+const categoryToDelete = ref<CategoryItem | null>(null)
+const categoryDeleteError = ref('')
+
+function confirmDeleteCategory(cat: CategoryItem) {
+  categoryToDelete.value = cat
+  categoryDeleteError.value = ''
+  showCategoryDeleteModal.value = true
+}
+
+async function handleDeleteCategory() {
+  if (!categoryToDelete.value) return
+  const count = categoryProductCounts.value[categoryToDelete.value.name] || 0
+  if (count > 0) {
+    categoryDeleteError.value = `Cannot delete category "${categoryToDelete.value.name}" because ${count} product(s) are currently tagged with it. Please reassign or delete those products first.`
+    return
+  }
+
+  try {
+    await deleteCategory(categoryToDelete.value.id)
+    showCategoryDeleteModal.value = false
+    categoryToDelete.value = null
+  } catch (err: any) {
+    categoryDeleteError.value = err?.message || 'Failed to delete category.'
+  }
+}
 </script>
 
 <template>
   <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
 
-    <!-- ── DASHBOARD CONTENT ─────────────────────────────────────────────────── -->
-    <!-- Header Title & Actions -->
+    <!-- ── DASHBOARD HEADER ───────────────────────────────────────────────────── -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-grey/20 pb-6">
       <div>
         <div class="flex items-center gap-2 mb-1">
@@ -244,7 +356,7 @@ function handleDelete() {
           </span>
         </div>
         <h1 class="font-display text-3xl font-extrabold text-slate-deep tracking-tight">
-          Product Management Dashboard
+          Admin Management Dashboard
         </h1>
         <p class="text-xs text-slate-grey mt-1">
           Signed in as
@@ -268,11 +380,21 @@ function handleDelete() {
         </button>
 
         <button
+          v-if="activeTab === 'products'"
           @click="openAddModal"
           class="btn-primary text-xs font-bold flex items-center gap-2 py-2.5 px-5 rounded-xl shadow-md hover:scale-[1.02] active:scale-95 transition-all"
         >
           <Plus class="h-4 w-4" />
           Add New Product
+        </button>
+
+        <button
+          v-else
+          @click="openAddCategoryModal"
+          class="btn-primary text-xs font-bold flex items-center gap-2 py-2.5 px-5 rounded-xl shadow-md hover:scale-[1.02] active:scale-95 transition-all bg-emerald-700 hover:bg-emerald-800"
+        >
+          <FolderPlus class="h-4 w-4" />
+          Add New Category
         </button>
       </div>
     </div>
@@ -314,212 +436,348 @@ function handleDelete() {
           <Layers class="h-6 w-6" />
         </div>
         <div>
-          <p class="text-xs text-slate-grey uppercase font-bold tracking-wider">Categories</p>
-          <p class="text-2xl font-black text-slate-deep font-display">{{ categoryOptions.length }}</p>
+          <p class="text-xs text-slate-grey uppercase font-bold tracking-wider">Total Categories</p>
+          <p class="text-2xl font-black text-slate-deep font-display">{{ categoryList.length }}</p>
         </div>
       </div>
     </div>
 
-    <!-- Controls Bar: Search & Category Filter -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-grey/20 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-      <!-- Search Input -->
-      <div class="relative w-full sm:w-80">
-        <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-grey" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search product title, ID..."
-          class="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-grey/30 bg-soft-cream/30 focus:outline-none focus:ring-2 focus:ring-slate-deep/40 transition-all"
-        />
-        <button
-          v-if="searchQuery"
-          @click="searchQuery = ''"
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-grey hover:text-slate-deep"
-        >
-          <X class="h-3.5 w-3.5" />
-        </button>
-      </div>
+    <!-- Dashboard Main Navigation Tabs -->
+    <div class="flex items-center gap-3 border-b border-slate-grey/20 pb-3">
+      <button
+        @click="activeTab = 'products'"
+        class="px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2"
+        :class="activeTab === 'products' ? 'bg-slate-deep text-warm-sand shadow-md' : 'bg-white text-slate-600 border border-slate-grey/20 hover:bg-slate-50'"
+      >
+        <Package class="h-4 w-4" />
+        Products Catalog ({{ totalProducts }})
+      </button>
 
-      <!-- Category Filter Pills -->
-      <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-        <button
-          v-for="cat in categories"
-          :key="cat"
-          @click="selectedCategory = cat"
-          class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0"
-          :class="selectedCategory === cat ? 'bg-slate-deep text-soft-cream font-bold shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
-        >
-          {{ cat }}
-        </button>
-      </div>
+      <button
+        @click="activeTab = 'categories'"
+        class="px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2"
+        :class="activeTab === 'categories' ? 'bg-slate-deep text-warm-sand shadow-md' : 'bg-white text-slate-600 border border-slate-grey/20 hover:bg-slate-50'"
+      >
+        <Layers class="h-4 w-4" />
+        Category Manager ({{ categoryList.length }})
+      </button>
     </div>
 
-    <!-- Product Data Table -->
-    <div class="bg-white rounded-2xl border border-slate-grey/20 shadow-xs overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-slate-deep">
-          <thead class="bg-slate-100/80 text-slate-grey font-bold uppercase tracking-wider border-b border-slate-grey/20 text-[11px]">
-            <tr>
-              <th scope="col" class="px-6 py-4">Product</th>
-              <th scope="col" class="px-4 py-4">Category</th>
-              <th scope="col" class="px-4 py-4">Price</th>
-              <th scope="col" class="px-4 py-4">Status</th>
-              <th scope="col" class="px-4 py-4">Sizes</th>
-              <th scope="col" class="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-grey/10 font-medium">
-            <!-- Loading Skeletal Table Rows -->
-            <template v-if="isLoading">
-              <tr v-for="i in 5" :key="i" class="animate-pulse">
+    <!-- ── TAB 1: PRODUCTS MANAGEMENT ───────────────────────────────────────── -->
+    <template v-if="activeTab === 'products'">
+      <!-- Controls Bar: Search & Category Filter -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-grey/20 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-80">
+          <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-grey" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search product title, ID..."
+            class="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-grey/30 bg-soft-cream/30 focus:outline-none focus:ring-2 focus:ring-slate-deep/40 transition-all"
+          />
+          <button
+            v-if="searchQuery"
+            @click="searchQuery = ''"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-grey hover:text-slate-deep"
+          >
+            <X class="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+          <button
+            v-for="cat in categoryNames"
+            :key="cat"
+            @click="selectedCategory = cat"
+            class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0"
+            :class="selectedCategory === cat ? 'bg-slate-deep text-soft-cream font-bold shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+          >
+            {{ cat }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Product Data Table -->
+      <div class="bg-white rounded-2xl border border-slate-grey/20 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-deep">
+            <thead class="bg-slate-100/80 text-slate-grey font-bold uppercase tracking-wider border-b border-slate-grey/20 text-[11px]">
+              <tr>
+                <th scope="col" class="px-6 py-4">Product</th>
+                <th scope="col" class="px-4 py-4">Category</th>
+                <th scope="col" class="px-4 py-4">Price</th>
+                <th scope="col" class="px-4 py-4">Status</th>
+                <th scope="col" class="px-4 py-4">Sizes</th>
+                <th scope="col" class="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-grey/10 font-medium">
+              <!-- Loading Skeletal Table Rows -->
+              <template v-if="isLoading">
+                <tr v-for="i in 5" :key="i" class="animate-pulse">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <div class="h-12 w-12 rounded-xl bg-slate-200 shrink-0"></div>
+                      <div class="space-y-1.5 flex-1">
+                        <div class="h-4 bg-slate-200 rounded w-44"></div>
+                        <div class="h-3 bg-slate-100 rounded w-20"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="h-6 w-20 bg-slate-200 rounded-md"></div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="h-4 w-24 bg-slate-200 rounded"></div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="h-6 w-20 bg-slate-200 rounded-full"></div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="flex gap-1">
+                      <div class="h-4 w-6 bg-slate-200 rounded"></div>
+                      <div class="h-4 w-6 bg-slate-200 rounded"></div>
+                      <div class="h-4 w-6 bg-slate-200 rounded"></div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2">
+                      <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
+                      <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
+                      <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+
+              <!-- Empty Filter State -->
+              <tr v-else-if="filteredProducts.length === 0">
+                <td colspan="6" class="px-6 py-12 text-center text-slate-grey">
+                  <Package class="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                  <p class="font-bold text-slate-deep">No products found</p>
+                  <p class="text-xs mt-0.5">Try adjusting your search query or category filter.</p>
+                </td>
+              </tr>
+
+              <!-- Product Rows -->
+              <tr
+                v-else
+                v-for="prod in filteredProducts"
+                :key="prod.id"
+                class="hover:bg-soft-cream/40 transition-colors group"
+              >
+                <!-- Image & Title -->
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="h-12 w-12 rounded-xl bg-slate-200 shrink-0"></div>
-                    <div class="space-y-1.5 flex-1">
-                      <div class="h-4 bg-slate-200 rounded w-44"></div>
-                      <div class="h-3 bg-slate-100 rounded w-20"></div>
+                    <div class="h-12 w-12 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-grey/20 shadow-xs">
+                      <img
+                        :src="prod.images[0]"
+                        :alt="prod.title"
+                        class="h-full w-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-slate-deep text-sm line-clamp-1">
+                        {{ prod.title }}
+                      </h4>
+                      <span class="text-[11px] font-mono text-slate-grey">
+                        ID: {{ prod.id }}
+                      </span>
                     </div>
                   </div>
                 </td>
+
+                <!-- Category -->
                 <td class="px-4 py-4">
-                  <div class="h-6 w-20 bg-slate-200 rounded-md"></div>
+                  <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-warm-sand/30 text-slate-800 border border-warm-sand/50">
+                    {{ prod.category }}
+                  </span>
                 </td>
-                <td class="px-4 py-4">
-                  <div class="h-4 w-24 bg-slate-200 rounded"></div>
-                </td>
-                <td class="px-4 py-4">
-                  <div class="h-6 w-20 bg-slate-200 rounded-full"></div>
-                </td>
-                <td class="px-4 py-4">
-                  <div class="flex gap-1">
-                    <div class="h-4 w-6 bg-slate-200 rounded"></div>
-                    <div class="h-4 w-6 bg-slate-200 rounded"></div>
-                    <div class="h-4 w-6 bg-slate-200 rounded"></div>
+
+                <!-- Price -->
+                <td class="px-4 py-4 whitespace-nowrap">
+                  <div class="font-bold text-slate-deep text-sm">
+                    {{ prod.formattedPrice || formatRupiah(prod.price) }}
+                  </div>
+                  <div v-if="prod.originalPrice" class="text-[11px] text-slate-grey line-through">
+                    {{ prod.formattedOriginalPrice || formatRupiah(prod.originalPrice) }}
                   </div>
                 </td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex justify-end gap-2">
-                    <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
-                    <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
-                    <div class="h-8 w-8 bg-slate-200 rounded-lg"></div>
+
+                <!-- Stock Status Badge -->
+                <td class="px-4 py-4">
+                  <span
+                    class="px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5"
+                    :class="prod.inStock !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'"
+                  >
+                    <span class="h-1.5 w-1.5 rounded-full" :class="prod.inStock !== false ? 'bg-emerald-500' : 'bg-red-500'"></span>
+                    {{ prod.inStock !== false ? 'In Stock' : 'Out of Stock' }}
+                  </span>
+                </td>
+
+                <!-- Sizes -->
+                <td class="px-4 py-4">
+                  <div class="flex flex-wrap gap-1">
+                    <span
+                      v-for="s in prod.availableSizes"
+                      :key="s"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200"
+                    >
+                      {{ s }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Action Buttons -->
+                <td class="px-6 py-4 text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <button
+                      @click="emit('open-product', prod)"
+                      class="p-2 rounded-lg text-slate-grey hover:text-slate-deep hover:bg-warm-sand/30 transition-all"
+                      title="Preview Product Modal"
+                    >
+                      <Eye class="h-4 w-4" />
+                    </button>
+
+                    <button
+                      @click="openEditModal(prod)"
+                      class="p-2 rounded-lg text-slate-grey hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                      title="Edit Product"
+                    >
+                      <Edit2 class="h-4 w-4" />
+                    </button>
+
+                    <button
+                      @click="confirmDelete(prod)"
+                      class="p-2 rounded-lg text-slate-grey hover:text-red-600 hover:bg-red-50 transition-all"
+                      title="Delete Product"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
-            </template>
-
-            <!-- Empty Filter State -->
-            <tr v-else-if="filteredProducts.length === 0">
-              <td colspan="6" class="px-6 py-12 text-center text-slate-grey">
-                <Package class="h-10 w-10 mx-auto mb-2 text-slate-300" />
-                <p class="font-bold text-slate-deep">No products found</p>
-                <p class="text-xs mt-0.5">Try adjusting your search query or category filter.</p>
-              </td>
-            </tr>
-
-            <!-- Product Rows -->
-            <tr
-              v-else
-              v-for="prod in filteredProducts"
-              :key="prod.id"
-              class="hover:bg-soft-cream/40 transition-colors group"
-            >
-              <!-- Image & Title -->
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="h-12 w-12 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-grey/20 shadow-xs">
-                    <img
-                      :src="prod.images[0]"
-                      :alt="prod.title"
-                      class="h-full w-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <div>
-                    <h4 class="font-bold text-slate-deep text-sm line-clamp-1">
-                      {{ prod.title }}
-                    </h4>
-                    <span class="text-[11px] font-mono text-slate-grey">
-                      ID: {{ prod.id }}
-                    </span>
-                  </div>
-                </div>
-              </td>
-
-              <!-- Category -->
-              <td class="px-4 py-4">
-                <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-warm-sand/30 text-slate-800 border border-warm-sand/50">
-                  {{ prod.category }}
-                </span>
-              </td>
-
-              <!-- Price -->
-              <td class="px-4 py-4 whitespace-nowrap">
-                <div class="font-bold text-slate-deep text-sm">
-                  {{ prod.formattedPrice || formatRupiah(prod.price) }}
-                </div>
-                <div v-if="prod.originalPrice" class="text-[11px] text-slate-grey line-through">
-                  {{ prod.formattedOriginalPrice || formatRupiah(prod.originalPrice) }}
-                </div>
-              </td>
-
-              <!-- Stock Status Badge -->
-              <td class="px-4 py-4">
-                <span
-                  class="px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5"
-                  :class="prod.inStock !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full" :class="prod.inStock !== false ? 'bg-emerald-500' : 'bg-red-500'"></span>
-                  {{ prod.inStock !== false ? 'In Stock' : 'Out of Stock' }}
-                </span>
-              </td>
-
-              <!-- Sizes -->
-              <td class="px-4 py-4">
-                <div class="flex flex-wrap gap-1">
-                  <span
-                    v-for="s in prod.availableSizes"
-                    :key="s"
-                    class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200"
-                  >
-                    {{ s }}
-                  </span>
-                </div>
-              </td>
-
-              <!-- Action Buttons -->
-              <td class="px-6 py-4 text-right whitespace-nowrap">
-                <div class="flex items-center justify-end gap-1.5">
-                  <button
-                    @click="emit('open-product', prod)"
-                    class="p-2 rounded-lg text-slate-grey hover:text-slate-deep hover:bg-warm-sand/30 transition-all"
-                    title="Preview Product Modal"
-                  >
-                    <Eye class="h-4 w-4" />
-                  </button>
-
-                  <button
-                    @click="openEditModal(prod)"
-                    class="p-2 rounded-lg text-slate-grey hover:text-indigo-600 hover:bg-indigo-50 transition-all"
-                    title="Edit Product"
-                  >
-                    <Edit2 class="h-4 w-4" />
-                  </button>
-
-                  <button
-                    @click="confirmDelete(prod)"
-                    class="p-2 rounded-lg text-slate-grey hover:text-red-600 hover:bg-red-50 transition-all"
-                    title="Delete Product"
-                  >
-                    <Trash2 class="h-4 w-4" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </template>
 
-    <!-- Create & Edit Product Modal -->
+    <!-- ── TAB 2: CATEGORIES MANAGEMENT (CRUD) ────────────────────────────────── -->
+    <template v-else-if="activeTab === 'categories'">
+      <div class="bg-white rounded-2xl border border-slate-grey/20 shadow-xs overflow-hidden">
+        <!-- Category Table Header Bar -->
+        <div class="p-5 border-b border-slate-grey/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+          <div>
+            <h3 class="font-display font-bold text-lg text-slate-deep">Product Categories</h3>
+            <p class="text-xs text-slate-grey mt-0.5">Manage, rename, and add shirt apparel categories for your store catalog.</p>
+          </div>
+          <button
+            @click="openAddCategoryModal"
+            class="btn-primary text-xs font-bold flex items-center gap-2 py-2 px-4 rounded-xl shadow-sm hover:scale-[1.02] active:scale-95 transition-all self-start sm:self-auto"
+          >
+            <FolderPlus class="h-4 w-4" />
+            Add New Category
+          </button>
+        </div>
+
+        <!-- Categories Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-deep">
+            <thead class="bg-slate-100/80 text-slate-grey font-bold uppercase tracking-wider border-b border-slate-grey/20 text-[11px]">
+              <tr>
+                <th scope="col" class="px-6 py-4">Category Name</th>
+                <th scope="col" class="px-6 py-4">Description</th>
+                <th scope="col" class="px-4 py-4 text-center">Tagged Products</th>
+                <th scope="col" class="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-grey/10 font-medium">
+              <tr v-if="isLoadingCategories" class="animate-pulse">
+                <td colspan="4" class="px-6 py-8 text-center text-slate-grey">
+                  <RefreshCw class="h-6 w-6 animate-spin mx-auto mb-2 text-slate-400" />
+                  Loading categories...
+                </td>
+              </tr>
+
+              <tr v-else-if="categoryList.length === 0">
+                <td colspan="4" class="px-6 py-12 text-center text-slate-grey">
+                  <Layers class="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                  <p class="font-bold text-slate-deep">No categories created yet</p>
+                  <p class="text-xs mt-0.5">Click "Add New Category" to create your first product category.</p>
+                </td>
+              </tr>
+
+              <tr
+                v-else
+                v-for="cat in categoryList"
+                :key="cat.id"
+                class="hover:bg-soft-cream/40 transition-colors"
+              >
+                <!-- Name & ID -->
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 rounded-lg bg-warm-sand/30 flex items-center justify-center text-slate-800 shrink-0 font-bold font-display text-sm">
+                      {{ cat.name.charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-slate-deep text-sm">
+                        {{ cat.name }}
+                      </h4>
+                      <span class="text-[10px] font-mono text-slate-grey">
+                        ID: {{ cat.id }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Description -->
+                <td class="px-6 py-4 text-slate-600 max-w-xs">
+                  {{ cat.description || 'No description provided' }}
+                </td>
+
+                <!-- Tagged Product Count Badge -->
+                <td class="px-4 py-4 text-center">
+                  <span
+                    class="px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1"
+                    :class="(categoryProductCounts[cat.name] || 0) > 0 ? 'bg-slate-deep text-warm-sand' : 'bg-slate-100 text-slate-400'"
+                  >
+                    {{ categoryProductCounts[cat.name] || 0 }} products
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="px-6 py-4 text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-2">
+                    <button
+                      @click="openEditCategoryModal(cat)"
+                      class="p-2 rounded-lg text-slate-grey hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center gap-1.5 font-bold text-xs"
+                      title="Edit Category Name & Description"
+                    >
+                      <Edit2 class="h-3.5 w-3.5" />
+                      Edit
+                    </button>
+
+                    <button
+                      @click="confirmDeleteCategory(cat)"
+                      class="p-2 rounded-lg text-slate-grey hover:text-red-600 hover:bg-red-50 transition-all flex items-center gap-1.5 font-bold text-xs"
+                      title="Delete Category"
+                    >
+                      <Trash2 class="h-3.5 w-3.5" />
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
+
+    <!-- ── MODAL 1: CREATE / EDIT PRODUCT MODAL ──────────────────────────────── -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0 scale-95"
@@ -570,7 +828,7 @@ function handleDelete() {
                   required
                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-grey/30 bg-soft-cream/20 focus:outline-none focus:ring-2 focus:ring-slate-deep/40 font-medium"
                 >
-                  <option v-for="cat in categoryOptions" :key="cat" :value="cat">
+                  <option v-for="cat in rawCategoryNames" :key="cat" :value="cat">
                     {{ cat }}
                   </option>
                 </select>
@@ -695,7 +953,7 @@ function handleDelete() {
       </div>
     </Transition>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- ── MODAL 2: DELETE PRODUCT CONFIRMATION MODAL ───────────────────────── -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0 scale-95"
@@ -742,6 +1000,138 @@ function handleDelete() {
       </div>
     </Transition>
 
+    <!-- ── MODAL 3: CREATE / EDIT CATEGORY MODAL ─────────────────────────────── -->
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="showCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-grey/20 shadow-2xl relative text-slate-deep">
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between border-b border-slate-grey/20 pb-4 mb-5">
+            <div>
+              <h3 class="font-display font-bold text-lg text-slate-deep">
+                {{ isEditingCategory ? 'Edit Category' : 'Add New Category' }}
+              </h3>
+              <p class="text-xs text-slate-grey">
+                {{ isEditingCategory ? 'Renaming category will automatically update tagged products' : 'Enter a new category name for product cataloging' }}
+              </p>
+            </div>
+            <button
+              @click="showCategoryModal = false"
+              class="p-2 rounded-xl text-slate-grey hover:text-slate-deep hover:bg-slate-100 transition-colors"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <!-- Error Alert -->
+          <div v-if="categoryError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+            <AlertCircle class="h-4 w-4 text-red-500 shrink-0" />
+            <span>{{ categoryError }}</span>
+          </div>
+
+          <!-- Form Body -->
+          <form @submit.prevent="handleSaveCategory" class="space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-deep mb-1">Category Name *</label>
+              <input
+                v-model="categoryForm.name"
+                type="text"
+                required
+                placeholder="e.g. Linen, Flannel, Oversized..."
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-grey/30 bg-soft-cream/20 focus:outline-none focus:ring-2 focus:ring-slate-deep/40 font-medium"
+              />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-deep mb-1">Description (Optional)</label>
+              <textarea
+                v-model="categoryForm.description"
+                rows="3"
+                placeholder="Brief description of this apparel category..."
+                class="w-full px-3.5 py-2 rounded-xl border border-slate-grey/30 bg-soft-cream/20 focus:outline-none focus:ring-2 focus:ring-slate-deep/40 font-medium"
+              ></textarea>
+            </div>
+
+            <div class="pt-3 border-t border-slate-grey/20 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                @click="showCategoryModal = false"
+                class="px-4 py-2 rounded-xl border border-slate-grey/30 text-slate-grey font-bold hover:bg-slate-100 transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                :disabled="categorySubmitting"
+                class="btn-primary px-5 py-2 rounded-xl font-bold flex items-center gap-2 shadow-md disabled:opacity-50"
+              >
+                <RefreshCw v-if="categorySubmitting" class="h-4 w-4 animate-spin" />
+                <Check v-else class="h-4 w-4" />
+                <span>{{ isEditingCategory ? 'Update Category' : 'Create Category' }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- ── MODAL 4: DELETE CATEGORY CONFIRMATION MODAL ───────────────────────── -->
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="showCategoryDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-grey/20 shadow-2xl text-slate-deep space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+              <AlertTriangle class="h-5 w-5" />
+            </div>
+            <div>
+              <h4 class="font-display font-bold text-lg">Delete Category</h4>
+              <p class="text-xs text-slate-grey">This action will remove the category from catalog filters.</p>
+            </div>
+          </div>
+
+          <div v-if="categoryDeleteError" class="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 leading-relaxed">
+            <strong class="block mb-0.5">Cannot Delete Category</strong>
+            {{ categoryDeleteError }}
+          </div>
+
+          <div v-else-if="categoryToDelete" class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+            <p class="font-bold text-slate-deep">Category: {{ categoryToDelete.name }}</p>
+            <p class="text-[11px] text-slate-grey">ID: {{ categoryToDelete.id }}</p>
+            <p class="text-[11px] text-slate-600">Tagged Products: {{ categoryProductCounts[categoryToDelete.name] || 0 }}</p>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button
+              @click="showCategoryDeleteModal = false"
+              class="px-4 py-2 rounded-xl border border-slate-grey/30 text-xs font-bold text-slate-grey hover:bg-slate-100 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              v-if="!categoryDeleteError"
+              @click="handleDeleteCategory"
+              class="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition-colors shadow-sm"
+            >
+              Delete Category
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
   </div>
 </template>

@@ -1,12 +1,18 @@
 export type ShirtSize = 'S' | 'M' | 'L' | 'XL' | 'XXL'
-export type ShirtCategory = 'All' | 'Short Sleeve' | 'Flannel' | 'Linen' | 'Hawaiian' | 'Batik'
+export type ShirtCategory = string
+
+export interface CategoryItem {
+  id: string
+  name: string
+  description?: string
+}
 
 export interface Product {
   id: string
   title: string
   price: number
   formattedPrice: string
-  category: Exclude<ShirtCategory, 'All'>
+  category: string
   images: string[]
   availableSizes: ShirtSize[]
   description: string
