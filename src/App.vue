@@ -30,7 +30,7 @@ const {
 const { isAdmin, isAuthLoading } = useAuth()
 
 // ── Navigation & Page Routing State ────────────────────────────────────────────
-const activePage = ref<'home' | 'collection' | 'dashboard' | 'login'>('collection')
+const activePage = ref<'home' | 'collection' | 'dashboard' | 'login'>('home')
 const activeProduct = ref<Product | null>(null)
 const homeCategory = ref<ShirtCategory>('All')
 
@@ -54,10 +54,10 @@ function syncPageFromUrl() {
     } else {
       activePage.value = 'login'
     }
-  } else if (path.includes('home')) {
-    activePage.value = 'home'
-  } else {
+  } else if (path.includes('collection')) {
     activePage.value = 'collection'
+  } else {
+    activePage.value = 'home'
   }
 }
 
@@ -91,7 +91,7 @@ function navigateTo(page: 'home' | 'collection' | 'dashboard') {
     return
   }
   activePage.value = page
-  const targetPath = page === 'dashboard' ? '/dashboard' : page === 'home' ? '/home' : '/'
+  const targetPath = page === 'dashboard' ? '/dashboard' : page === 'collection' ? '/collection' : '/'
   if (window.location.pathname !== targetPath) {
     window.history.pushState({}, '', targetPath)
   }

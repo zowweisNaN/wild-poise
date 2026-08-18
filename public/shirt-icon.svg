@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="#30364F"/>
+  <!-- Collar & Shirt Outline -->
+  <path d="M156 128 C156 128 200 176 256 176 C312 176 356 128 356 128 L432 184 L376 256 L336 224 V416 H176 V224 L136 256 L80 184 L156 128 Z" fill="#E1D9BC" />
+  <!-- Inner Collar Detail -->
+  <path d="M256 176 L204 128 H308 L256 176 Z" fill="#30364F" />
+  <!-- Button Placket -->
+  <line x1="256" y1="176" x2="256" y2="416" stroke="#30364F" stroke-width="12" stroke-linecap="round" />
+  <!-- Buttons -->
+  <circle cx="256" cy="232" r="10" fill="#30364F" />
+  <circle cx="256" cy="296" r="10" fill="#30364F" />
+  <circle cx="256" cy="360" r="10" fill="#30364F" />
+</svg>
