@@ -1,46 +1,69 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Menu, X, ShoppingBag, User, Layers, ShieldCheck, LogOut } from '@lucide/vue'
-import { useAuth } from '../composables/useAuth'
+import { ref } from "vue";
+import {
+  Menu,
+  X,
+  ShoppingBag,
+  User,
+  Layers,
+  ShieldCheck,
+  LogOut,
+} from "@lucide/vue";
+import { useAuth } from "../composables/useAuth";
 
 const props = defineProps<{
-  activePage: 'home' | 'collection' | 'dashboard'
-  isLiveFirebase: boolean
-  isFirebaseConfigured: boolean
-  isSeeding: boolean
-  seedSuccess: boolean
-}>()
+  activePage: "home" | "collection" | "dashboard";
+  isLiveFirebase: boolean;
+  isFirebaseConfigured: boolean;
+  isSeeding: boolean;
+  seedSuccess: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'navigate', page: 'home' | 'collection' | 'dashboard'): void
-  (e: 'seed'): void
-}>()
+  (e: "navigate", page: "home" | "collection" | "dashboard"): void;
+  (e: "seed"): void;
+}>();
 
-const mobileOpen = ref(false)
+const mobileOpen = ref(false);
 
-const { isAdmin, adminUser, logout } = useAuth()
+const { isAdmin, adminUser, logout } = useAuth();
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 bg-soft-cream/95 backdrop-blur-md border-b border-slate-grey/20 shadow-xs">
+  <header
+    class="sticky top-0 z-40 bg-soft-cream/95 backdrop-blur-md border-b border-slate-grey/20 shadow-xs"
+  >
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="flex h-16 items-center justify-between gap-4">
         <!-- Brand Logo -->
-        <button @click="emit('navigate', 'home')" class="flex items-center gap-2 group text-left shrink-0">
-          <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-deep text-soft-cream transition-transform group-hover:scale-105">
+        <button
+          @click="emit('navigate', 'home')"
+          class="flex items-center gap-2 group text-left shrink-0"
+        >
+          <span
+            class="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-deep text-soft-cream transition-transform group-hover:scale-105"
+          >
             <ShoppingBag class="h-4 w-4 text-warm-sand" />
           </span>
-          <span class="font-display text-xl font-bold text-slate-deep tracking-widest uppercase">
+          <span
+            class="font-display text-xl font-bold text-slate-deep tracking-widest uppercase"
+          >
             Wild Poise<span class="text-slate-grey">.</span>
           </span>
         </button>
 
         <!-- Desktop Navigation Links -->
-        <nav class="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-slate-deep">
+        <nav
+          class="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-slate-deep"
+        >
           <button
             @click="emit('navigate', 'home')"
             class="py-2 border-b-2 transition-all hover:text-slate-deep"
-            :class="activePage === 'home' ? 'border-slate-deep text-slate-deep font-extrabold' : 'border-transparent text-slate-deep/70'"
+            :class="
+              activePage === 'home'
+                ? 'border-slate-deep text-slate-deep font-extrabold'
+                : 'border-transparent text-slate-deep/70'
+            "
           >
             Home
           </button>
@@ -48,7 +71,11 @@ const { isAdmin, adminUser, logout } = useAuth()
           <button
             @click="emit('navigate', 'collection')"
             class="py-2 border-b-2 transition-all flex items-center gap-1.5 hover:text-slate-deep"
-            :class="activePage === 'collection' ? 'border-slate-deep text-slate-deep font-extrabold' : 'border-transparent text-slate-deep/70'"
+            :class="
+              activePage === 'collection'
+                ? 'border-slate-deep text-slate-deep font-extrabold'
+                : 'border-transparent text-slate-deep/70'
+            "
           >
             <Layers class="h-3.5 w-3.5" />
             Collections Catalog
@@ -67,7 +94,7 @@ const { isAdmin, adminUser, logout } = useAuth()
               <ShieldCheck class="h-3.5 w-3.5 group-hover:hidden" />
               <LogOut class="h-3.5 w-3.5 hidden group-hover:block" />
               <span class="group-hover:hidden">
-                {{ adminUser?.email ? adminUser.email.split('@')[0] : 'Admin' }}
+                {{ adminUser?.email ? adminUser.email.split("@")[0] : "Admin" }}
               </span>
               <span class="hidden group-hover:inline">Sign out</span>
             </button>
@@ -104,24 +131,35 @@ const { isAdmin, adminUser, logout } = useAuth()
         leave-from-class="opacity-100 translate-y-0"
         leave-to-class="opacity-0 -translate-y-2"
       >
-        <nav v-if="mobileOpen" class="md:hidden pb-4 space-y-1 border-t border-slate-grey/20 pt-2">
+        <nav
+          v-if="mobileOpen"
+          class="md:hidden pb-4 space-y-1 border-t border-slate-grey/20 pt-2"
+        >
           <button
-            @click="emit('navigate', 'home'); mobileOpen = false"
+            @click="
+              emit('navigate', 'home');
+              mobileOpen = false;
+            "
             class="w-full text-left px-3 py-2 text-xs font-bold uppercase text-slate-deep hover:bg-warm-sand/30 rounded-lg"
           >
             Home
           </button>
           <button
-            @click="emit('navigate', 'collection'); mobileOpen = false"
+            @click="
+              emit('navigate', 'collection');
+              mobileOpen = false;
+            "
             class="w-full text-left px-3 py-2 text-xs font-bold uppercase text-slate-deep hover:bg-warm-sand/30 rounded-lg"
           >
             Collections Catalog
           </button>
 
-          <!-- Admin action in mobile (only shown when signed in) -->
           <div v-if="isAdmin" class="border-t border-slate-grey/20 pt-2 mt-2">
             <button
-              @click="logout; mobileOpen = false"
+              @click="
+                logout;
+                mobileOpen = false;
+              "
               class="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               <LogOut class="h-4 w-4" />
