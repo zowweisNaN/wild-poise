@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { Product } from '../types/product'
-import { ShoppingCart, Eye } from '@lucide/vue'
+import { ref } from "vue";
+import type { Product } from "../types/product";
+import { ShoppingCart, Eye } from "@lucide/vue";
 
 const props = defineProps<{
-  product: Product
-}>()
+  product: Product;
+}>();
 
 const emit = defineEmits<{
-  (e: 'open', product: Product): void
-}>()
+  (e: "open", product: Product): void;
+}>();
 
-const imgLoaded = ref(false)
-const hovered = ref(false)
+const imgLoaded = ref(false);
+const hovered = ref(false);
 </script>
 
 <template>
@@ -24,11 +24,12 @@ const hovered = ref(false)
     @click="emit('open', product)"
     :aria-label="`View ${product.title}`"
   >
-    <!-- Image Box (First Card Design) -->
     <div class="relative aspect-[3/4] overflow-hidden bg-slate-grey/10">
       <img
         v-if="product.images[0]"
-        :src="hovered && product.images[1] ? product.images[1] : product.images[0]"
+        :src="
+          hovered && product.images[1] ? product.images[1] : product.images[0]
+        "
         :alt="product.title"
         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         :class="{ 'opacity-0': !imgLoaded, 'opacity-100': imgLoaded }"
@@ -36,13 +37,11 @@ const hovered = ref(false)
         @load="imgLoaded = true"
       />
 
-      <!-- Skeleton loader -->
       <div
         v-if="!imgLoaded"
         class="absolute inset-0 bg-gradient-to-r from-slate-grey/10 via-warm-sand/20 to-slate-grey/10 bg-[length:200%_100%] animate-shimmer"
       />
 
-      <!-- Category & Status Badges -->
       <div class="absolute top-3 left-3 flex flex-col gap-1 z-10">
         <span class="badge shadow-xs">{{ product.category }}</span>
         <span
@@ -54,8 +53,12 @@ const hovered = ref(false)
       </div>
 
       <!-- Quick View Hover Overlay -->
-      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-slate-deep/30 backdrop-blur-[2px]">
-        <span class="flex items-center gap-2 bg-soft-cream text-slate-deep text-sm font-semibold px-4 py-2 rounded-full shadow-lg">
+      <div
+        class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-slate-deep/30 backdrop-blur-[2px]"
+      >
+        <span
+          class="flex items-center gap-2 bg-soft-cream text-slate-deep text-sm font-semibold px-4 py-2 rounded-full shadow-lg"
+        >
           <Eye class="h-4 w-4" />
           Quick View
         </span>
@@ -64,7 +67,9 @@ const hovered = ref(false)
 
     <!-- Info Section (First Card Design) -->
     <div class="p-4 flex flex-col flex-1">
-      <h3 class="font-display font-semibold text-slate-deep text-sm leading-snug line-clamp-2 mb-1.5">
+      <h3
+        class="font-display font-semibold text-slate-deep text-sm leading-snug line-clamp-2 mb-1.5"
+      >
         {{ product.title }}
       </h3>
 
@@ -80,7 +85,9 @@ const hovered = ref(false)
       </div>
 
       <!-- Price & Order CTA Button -->
-      <div class="mt-auto pt-2 flex items-center justify-between gap-2 border-t border-slate-grey/10">
+      <div
+        class="mt-auto pt-2 flex items-center justify-between gap-2 border-t border-slate-grey/10"
+      >
         <div class="flex flex-col">
           <span
             v-if="product.formattedOriginalPrice"
